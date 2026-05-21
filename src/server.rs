@@ -13,8 +13,8 @@ pub fn server() -> Result<(), Box<dyn std::error::Error>> {
         match stream {
             Ok(mut stream) => {
                 let mut reader = BufReader::new(&mut stream);
-                let coin = handle_stream(&mut reader)?;
-                send_price(&coin, &mut stream);
+                let coin = handle_stream(&mut reader)?.trim().to_string();
+                send_price(&coin, &mut stream)?;
             },
             Err(e) => println!("{e}")
         }
@@ -29,7 +29,7 @@ fn handle_stream(reader: &mut BufReader<&mut TcpStream>) -> Result<String, Box<d
    Ok(coin)
 }
 
-fn send_price(coin : &String, stream: &mut TcpStream) {
+fn send_price(coin : &String, stream: &mut TcpStream) -> Result<(), std::io::Error>{
     loop {
         let random_number = rand::random_range(40000..90000).to_string();
 
@@ -37,7 +37,7 @@ fn send_price(coin : &String, stream: &mut TcpStream) {
         // this is also known as framing or protocol boundary or message framing
         let price = format!("{coin} : {random_number}\n");
 
-        let _ = stream.write_all(price.as_bytes());
+        stream.write_all(price.as_bytes())?;  
 
         thread::sleep(Duration::from_millis(1500));
     }
