@@ -1,7 +1,11 @@
-use std::io::{Read, Write};
+use std::io::Write;
 use std::net::{TcpListener, TcpStream};
-use std::str::from_utf8;
+use std::thread;
+use std::time::Duration;
 use rand;
+use std::fmt::Error;
+
+use crate::buffer_reader::buffer_reader;
 
 pub fn server() -> std::io::Result<()> {
     let listener = TcpListener::bind("127.0.0.1:8080")?;
@@ -9,8 +13,8 @@ pub fn server() -> std::io::Result<()> {
     for stream in listener.incoming() {
         match stream {
             Ok(mut stream) => {
-                let coin = handle_stream(&mut stream);
-                send_price(&coin, stream);
+                let coin = handle_stream(&mut stream).expect("Error retrieving coin details.");
+                send_price(&coin, &mut stream);
             },
             Err(e) => println!("{e}")
         }
@@ -18,25 +22,20 @@ pub fn server() -> std::io::Result<()> {
     Ok(())
 }
 
-fn handle_stream(stream: &mut TcpStream) -> String {
+// will be replaced by buffer_reader module
+fn handle_stream(mut stream: &mut TcpStream) -> Result<String, Error> {
     
-    let mut buffer = [0; 128];
-    let bytes_read = stream.read(&mut buffer);
-
-    let mut coin = String::new();
-    if let Ok(bytes_count) = bytes_read {
-        if let Ok(ans) = from_utf8(&buffer[..bytes_count]){
-            println!("Requested from client : {ans}");
-            coin = ans.to_string();
-        }
-    };
-    coin
+   let coin = buffer_reader(&mut stream).expect("Error reading stream");
+   println!("Client requested : {coin}");
+   Ok(coin)
 }
 
-fn send_price(coin : &String, stream: TcpStream) {
+fn send_price(coin : &String, stream: &mut TcpStream) {
     loop {
-        let random_number = rand::random_range(40000..90000);
+        let random_number = rand::random_range(40000..90000).to_string();
+        let price = format!("{coin} : {random_number}\n");
+        let _ = stream.write_all(price.as_bytes());
 
-        // stream.write_all(random_number);
+        thread::sleep(Duration::from_millis(1500));
     }
 }   
