@@ -1,11 +1,9 @@
 use std::net::TcpStream;
 use std::io::Write;
-use std::thread;
-use std::time::Duration;
 
 use crate::buffer_reader::buffer_reader;
 
-pub fn client() -> std::io::Result<()> {
+pub fn client() -> Result<(), Box<dyn std::error::Error>> {
     let mut stream = TcpStream::connect("127.0.0.1:8080")?;
 
     let data = String::from("BTCUSD");
@@ -13,10 +11,9 @@ pub fn client() -> std::io::Result<()> {
     stream.write_all(data.as_bytes())?;
 
     loop {
-        let message = buffer_reader(&mut stream).expect("Error in reading stream");
+        let message = buffer_reader(&mut stream)?;
         println!("{message}");
 
-        // thread::sleep(Duration::from_millis(1500));
     }
 }
 
