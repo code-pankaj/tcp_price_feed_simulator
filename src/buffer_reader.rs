@@ -1,12 +1,12 @@
 use std::net::TcpStream;
-use std::io::Read;
-use std::str::from_utf8;
+use std::io::{BufRead, BufReader};
 
-pub fn buffer_reader(stream: &mut TcpStream) -> Result<String, Box<dyn std::error::Error>>{
-    let mut buffer: [u8;128] = [0;128];
-    let buffer_size = stream.read(&mut buffer)?;
+
+
+pub fn buffer_reader(reader: &mut BufReader<&mut TcpStream>) -> Result<String, Box<dyn std::error::Error>>{
     
-    let message = from_utf8(&buffer[..buffer_size])?;
+    let mut message = String::new();
+    reader.read_line(&mut message)?;
 
-    Ok(message.to_string())
+    Ok(message)
 }

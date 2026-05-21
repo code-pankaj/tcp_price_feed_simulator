@@ -1,9 +1,8 @@
-use std::io::Write;
+use std::io::{BufReader, Write};
 use std::net::{TcpListener, TcpStream};
 use std::thread;
 use std::time::Duration;
 use rand;
-
 
 use crate::buffer_reader::buffer_reader;
 
@@ -13,7 +12,8 @@ pub fn server() -> Result<(), Box<dyn std::error::Error>> {
     for stream in listener.incoming() {
         match stream {
             Ok(mut stream) => {
-                let coin = handle_stream(&mut stream)?;
+                let mut reader = BufReader::new(&mut stream);
+                let coin = handle_stream(&mut reader)?;
                 send_price(&coin, &mut stream);
             },
             Err(e) => println!("{e}")
@@ -22,10 +22,9 @@ pub fn server() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
-// will be replaced by buffer_reader module
-fn handle_stream(mut stream: &mut TcpStream) -> Result<String, Box<dyn std::error::Error>> {
+fn handle_stream(reader: &mut BufReader<&mut TcpStream>) -> Result<String, Box<dyn std::error::Error>> {
     
-   let coin = buffer_reader(&mut stream)?;
+   let coin = buffer_reader(reader)?;
    println!("Client requested : {coin}");
    Ok(coin)
 }
